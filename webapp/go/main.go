@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"math"
 	"math/rand"
 	"net/http"
@@ -19,6 +20,8 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/pkg/errors"
+
+	_ "net/http/pprof"
 )
 
 var (
@@ -103,6 +106,10 @@ func main() {
 	adminAuthAPI.PUT("/admin/master", h.adminUpdateMaster)
 	adminAuthAPI.GET("/admin/user/:userID", h.adminUser)
 	adminAuthAPI.POST("/admin/user/:userID/ban", h.adminBanUser)
+
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 
 	e.Logger.Infof("Start server: address=%s", e.Server.Addr)
 	e.Logger.Error(e.StartServer(e.Server))
@@ -1195,7 +1202,7 @@ func (h *Handler) listPresent(c echo.Context) error {
 	offset := PresentCountPerPage * (n - 1)
 	presentList := []*UserPresent{}
 	query := `
-	SELECT * FROM user_presents 
+	SELECT * FROM user_presents
 	WHERE user_id = ? AND deleted_at IS NULL
 	ORDER BY created_at DESC, id
 	LIMIT ? OFFSET ?`
