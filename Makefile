@@ -45,6 +45,12 @@ nginx-restart:
 nginx-log:
 	ssh isu12f-1 "sudo tail -f /var/log/nginx/access.log"
 
+nginx-error-log:
+	ssh isu12f-1 "sudo tail -f /var/log/nginx/error.log"
+
+journalctl:
+	ssh isu12f-1 "sudo journalctl -xef"
+
 env-deploy:
 	ssh isu12f-1 "sudo dd of=/home/isucon/env.sh" < ./env.sh
 	ssh isu12f-2 "sudo dd of=/home/isucon/env.sh" < ./env.sh
@@ -56,7 +62,7 @@ bench:
 		export ISUXBENCH_TARGET=172.31.37.150; \
 		./bin/benchmarker --stage=prod --request-timeout=20s --initialize-request-timeout=120s"
 
-pt-query-digest-1:
+pt-query-digest:
 	ssh isu12f-1 "sudo pt-query-digest --limit 10 /var/log/mysql/mysql-slow.log"
 
 ALPSORT=sum
