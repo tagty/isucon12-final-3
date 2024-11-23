@@ -435,19 +435,29 @@ func (h *Handler) obtainPresent(tx *sqlx.Tx, userID int64, requestAt int64) ([]*
 		return nil, err
 	}
 
-	obtainPresents := make([]*UserPresent, 0)
-	for _, np := range normalPresents {
-		received := new(UserPresentAllReceivedHistory)
-		query = "SELECT * FROM user_present_all_received_history WHERE user_id=? AND present_all_id=?"
-		err := tx.Get(received, query, userID, np.ID)
-		if err == nil {
-			// プレゼント配布済
-			continue
-		}
+	query = "SELECT * FROM user_present_all_received_history WHERE user_id=?"
+	receivedPresents := make([]*UserPresentAllReceivedHistory, 0)
+	if err := tx.Select(&receivedPresents, query, userID); err != nil {
 		if err != sql.ErrNoRows {
 			return nil, err
 		}
+	}
 
+	receivedPresentMap := make(map[int64]bool)
+	for _, rp := range receivedPresents {
+		receivedPresentMap[rp.PresentAllID] = true
+	}
+
+	filteredPresents := make([]*PresentAllMaster, 0)
+	for _, np := range normalPresents {
+		if !receivedPresentMap[np.ID] {
+			filteredPresents = append(filteredPresents, np)
+		}
+	}
+	normalPresents = filteredPresents
+
+	obtainPresents := make([]*UserPresent, 0)
+	for _, np := range normalPresents {
 		up := &UserPresent{
 			UserID:         userID,
 			SentAt:         requestAt,
