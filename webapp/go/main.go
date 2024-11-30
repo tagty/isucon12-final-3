@@ -473,6 +473,10 @@ func (h *Handler) obtainPresent(tx *sqlx.Tx, userID int64, requestAt int64) ([]*
 		if _, err := tx.Exec(query, up.UserID, up.SentAt, up.ItemType, up.ItemID, up.Amount, up.PresentMessage, up.CreatedAt, up.UpdatedAt); err != nil {
 			return nil, err
 		}
+		query = "INSERT INTO user_presents_pending(user_id, sent_at, item_type, item_id, amount, present_message, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+		if _, err := tx.Exec(query, up.UserID, up.SentAt, up.ItemType, up.ItemID, up.Amount, up.PresentMessage, up.CreatedAt, up.UpdatedAt); err != nil {
+			return nil, err
+		}
 
 		history := &UserPresentAllReceivedHistory{
 			UserID:       userID,
@@ -1104,6 +1108,11 @@ func (h *Handler) drawGacha(c echo.Context) error {
 		values = append(values, present.UserID, present.SentAt, present.ItemType, present.ItemID, present.Amount, present.PresentMessage, present.CreatedAt, present.UpdatedAt)
 	}
 	query = "INSERT INTO user_presents(user_id, sent_at, item_type, item_id, amount, present_message, created_at, updated_at) VALUES " +
+		strings.Repeat("(?, ?, ?, ?, ?, ?, ?, ?),", len(presents)-1) + "(?, ?, ?, ?, ?, ?, ?, ?)"
+	if _, err := tx.Exec(query, values...); err != nil {
+		return errorResponse(c, http.StatusInternalServerError, err)
+	}
+	query = "INSERT INTO user_presents_pending(user_id, sent_at, item_type, item_id, amount, present_message, created_at, updated_at) VALUES " +
 		strings.Repeat("(?, ?, ?, ?, ?, ?, ?, ?),", len(presents)-1) + "(?, ?, ?, ?, ?, ?, ?, ?)"
 	if _, err := tx.Exec(query, values...); err != nil {
 		return errorResponse(c, http.StatusInternalServerError, err)
