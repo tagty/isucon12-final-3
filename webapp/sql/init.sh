@@ -42,3 +42,9 @@ echo "LOAD DATA INFILE '${SECURE_DIR}5_user_presents_not_receive_data.tsv' REPLA
         --host "$ISUCON_DB_HOST" \
         --port "$ISUCON_DB_PORT" \
         "$ISUCON_DB_NAME"
+
+mysql -u"$ISUCON_DB_USER" \
+		-p"$ISUCON_DB_PASSWORD" \
+		--host "$ISUCON_DB_HOST" \
+		--port "$ISUCON_DB_PORT" \
+		"$ISUCON_DB_NAME" < 7_user_presents.sql
