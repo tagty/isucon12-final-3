@@ -1838,11 +1838,19 @@ func (h *Handler) generateID() (int64, error) {
 
 // generateSnowflakeID generates a unique ID using the Snowflake algorithm
 func (h *Handler) generateSnowflakeID() (int64, error) {
+	// node, err := snowflake.NewNode(1)
+	// if err != nil {
+	// 	return 0, err
+	// }
+	// id := node.Generate().Int64()
 	node, err := snowflake.NewNode(1)
 	if err != nil {
 		return 0, err
 	}
-	id := node.Generate().Int64()
+	id := node.Generate().Int64() // Snowflake IDを生成
+	randomBits := rand.Intn(8)    // 下位3ビットを乱数で置換
+	id = (id >> 3 << 3) | int64(randomBits)
+
 	return id, nil
 }
 
