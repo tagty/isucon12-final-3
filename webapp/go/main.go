@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bwmarrin/snowflake"
 	"github.com/go-sql-driver/mysql"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -459,7 +460,13 @@ func (h *Handler) obtainPresent(tx *sqlx.Tx, userID int64, requestAt int64) ([]*
 
 	obtainPresents := make([]*UserPresent, 0)
 	for _, np := range normalPresents {
+
+		pID, err := h.generateSnowflakeID()
+		if err != nil {
+			return nil, err
+		}
 		up := &UserPresent{
+			ID:             pID,
 			UserID:         userID,
 			SentAt:         requestAt,
 			ItemType:       np.ItemType,
@@ -469,8 +476,8 @@ func (h *Handler) obtainPresent(tx *sqlx.Tx, userID int64, requestAt int64) ([]*
 			CreatedAt:      requestAt,
 			UpdatedAt:      requestAt,
 		}
-		query = "INSERT INTO user_presents(user_id, sent_at, item_type, item_id, amount, present_message, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-		if _, err := tx.Exec(query, up.UserID, up.SentAt, up.ItemType, up.ItemID, up.Amount, up.PresentMessage, up.CreatedAt, up.UpdatedAt); err != nil {
+		query = "INSERT INTO user_presents(id, user_id, sent_at, item_type, item_id, amount, present_message, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+		if _, err := tx.Exec(query, up.ID, up.UserID, up.SentAt, up.ItemType, up.ItemID, up.Amount, up.PresentMessage, up.CreatedAt, up.UpdatedAt); err != nil {
 			return nil, err
 		}
 
@@ -1827,6 +1834,24 @@ func (h *Handler) generateID() (int64, error) {
 	}
 
 	return 0, fmt.Errorf("failed to generate id: %w", updateErr)
+}
+
+// generateSnowflakeID generates a unique ID using the Snowflake algorithm
+func (h *Handler) generateSnowflakeID() (int64, error) {
+	// node, err := snowflake.NewNode(1)
+	// if err != nil {
+	// 	return 0, err
+	// }
+	// id := node.Generate().Int64()
+	node, err := snowflake.NewNode(1)
+	if err != nil {
+		return 0, err
+	}
+	id := node.Generate().Int64() // Snowflake IDを生成
+	randomBits := rand.Intn(8)    // 下位3ビットを乱数で置換
+	id = (id >> 3 << 3) | int64(randomBits)
+
+	return id, nil
 }
 
 // generateUUID UUIDの生成
